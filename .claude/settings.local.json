@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "WebSearch",
+      "Bash(node --version:*)",
+      "Bash(npx:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm build:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run build)",
+      "Bash(pnpm remove:*)",
+      "Bash(python -m pytest:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "mongodb"
+  ]
+}

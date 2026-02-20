@@ -1,0 +1,38 @@
+repos:
+  # Backend Python tests
+  - repo: local
+    hooks:
+      - id: backend-tests
+        name: Backend Tests (pytest)
+        entry: bash -c 'cd backend && python -m pytest tests/ -v --tb=short'
+        language: system
+        pass_filenames: false
+        files: ^backend/.*\.py$
+        stages: [pre-commit]
+
+      - id: backend-lint
+        name: Backend Lint (ruff)
+        entry: bash -c 'cd backend && python -m ruff check .'
+        language: system
+        pass_filenames: false
+        files: ^backend/.*\.py$
+        stages: [pre-commit]
+
+  # Frontend checks (optional)
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend Lint
+        entry: bash -c 'cd frontend && pnpm lint'
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        stages: [pre-commit]
+
+      - id: frontend-build
+        name: Frontend Build Check
+        entry: bash -c 'cd frontend && pnpm build'
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        stages: [pre-commit]

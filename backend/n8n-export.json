@@ -1,0 +1,390 @@
+{
+  "name": "MuscleWiki API Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3a8e8afc-8aca-4790-b5ea-61c3a579f181",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "content": "## MuscleWiki API key\n299922e148msh9a1fbac3c90fe8cp11dcc5jsn34451e952600",
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        96,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "0fb6958b-2dea-46e2-abd7-5dfc472a4bf6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### System Prompt\n\nYou are a training plan generation algorithm. Your task is to populate missing data within a JSON structure based on specified muscle groups.\n\n**Input Data:**\n\n```json\n{{$json.output.trainings.map((item) => `{\"day\": '${item.day}', \"bodyParts\": [${item.bodyParts.map((part) => `'${part}'`)}] } \\n`).join('')}}\n\n```\n\n**Content Generation Rules for each day:**\n1. **Get muscles using tool** Reperent availvable muscles list for further tool exectuctions\n2. **List exercises for muscle group/gropups that matches 'bodyParts' items** Use tool responsible for listing exercises, then select up to 2 exercises from returned data, After fetching and selecting 2 exercises, proceed to next step.\n3. **Get details of exercise** When you select exercises, you HAVE TO use tool responsible for getting details of exercised\n\n* Generate a list of specific exercises within the `exercises` array.\n* Calculate and enter `timeRequired` as the total number of minutes for the entire block.\n\n**Formatting Rigor:**\n\n* Return only the final JSON object.\n* Do not generate content outside the code structure.\n* No explanations, no introduction, no conclusion.\n* The format must strictly comply with the output schema.\n\n---\n\n### Output Schema:\n\n```json\n{\n  \"trainings\": [\n    {\n      \"day\": \"string\",\n      \"name\": \"string\",\n      \"timeRequired\": \"integer\",\n      \"exercises\": [\n        {\n          \"name\": \"string\",\n          \"video\": \"string\",\n          \"repetitions\": \"string\"\n        }\n      ]\n    }\n  ]\n}\n\n```",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        992,
+        0
+      ],
+      "id": "366551f9-8efd-49e6-be38-0aab0d127529",
+      "name": "AI Agent1",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Personal Trainer Prompt (Standard n8n JSON)\n\nAct as a professional personal trainer. Your goal is to guide a 19-year-old male through a healthy weight reduction process (from 102 kg to 80 kg) while simultaneously building muscle mass (recomposition).\n\n## Time Context:\n\nCurrent date: {{$now.format('DDDD')}}\n\n**Instruction:** Based on the marker above, determine today's date, then calculate the dates for the upcoming full calendar week (starting this coming Monday).\n\n## Profile and Logistics:\n\n* Age: 19 years old.\n* Weight: Start 102 kg, Goal 80 kg.\n* Frequency: Exactly 3 workouts per week.\n* Fixed training days: Monday, Thursday, Saturday.\n* Time: Mornings, finishing before 08:00.\n* Duration: 40–90 minutes.\n\n## Task:\n\nGenerate a precise training plan for the upcoming calendar week. Schedule training sessions only on Monday, Thursday, and Saturday. The output must be a clean JSON object according to the schema below.\n\n## Required JSON Structure (Schema):\n\n```json\n{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"weekStart\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"Start date of the upcoming week (the nearest Monday) in YYYY-MM-DD format\"\n    },\n    \"weekEnd\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"End date of the upcoming week (Sunday) in YYYY-MM-DD format\"\n    },\n    \"trainings\": {\n      \"type\": \"array\",\n      \"minItems\": 3,\n      \"maxItems\": 3,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"day\": {\n            \"type\": \"string\",\n            \"format\": \"date\",\n            \"description\": \"Training date (Monday, Thursday, or Saturday of the upcoming week)\"\n          },\n          \"bodyParts\": {\n            \"type\": \"array\",\n            \"items\": { \"type\": \"string\" },\n            \"description\": \"Precise identification of body parts, e.g., 'Quadriceps femoris', 'Pectoralis major - clavicular part'.\"\n          }\n        },\n        \"required\": [\"day\", \"bodyParts\"]\n      }\n    }\n  },\n  \"required\": [\"weekStart\", \"weekEnd\", \"trainings\"]\n}\n\n```",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "26091ebe-f864-404b-bbf7-e51c8b07517b",
+      "name": "Planner agent",
+      "retryOnFail": true,
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        480,
+        224
+      ],
+      "id": "a5134042-d2f3-4943-b2e1-b931cddd9465",
+      "name": "Planner agent LLM",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2FN3RfVLvSOEV5Pe",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"weekStart\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"Data rozpoczęcia tygodnia w formacie ISO 8601 (YYYY-MM-DD)\"\n    },\n    \"weekEnd\": {\n      \"type\": \"string\",\n      \"format\": \"date\",\n      \"description\": \"Data zakończenia tygodnia w formacie ISO 8601 (YYYY-MM-DD)\"\n    },\n    \"trainings\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"day\": {\n            \"type\": \"string\",\n            \"format\": \"date\",\n            \"description\": \"Data treningu w formacie ISO 8601 (YYYY-MM-DD)\"\n          },\n          \"bodyParts\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            },\n            \"description\": \"Lista trenowanych partii ciała\"\n          }\n        },\n        \"required\": [\"day\", \"bodyParts\"]\n      }\n    }\n  },\n  \"required\": [\"weekStart\", \"weekEnd\", \"trainings\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        224
+      ],
+      "id": "59dad5ce-1db3-4cc3-b408-8b76b211fe7a",
+      "name": "Output schema of tranining planner agent",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n\n  \"type\": \"object\",\n\n  \"properties\": {\n\n    \"trainings\": {\n\n      \"type\": \"array\",\n\n      \"items\": {\n\n        \"type\": \"object\",\n\n        \"properties\": {\n\n          \"day\": {\n\n            \"type\": \"string\",\n\n            \"format\": \"date\",\n\n            \"description\": \"Data treningu w formacie ISO 8601 (YYYY-MM-DD)\"\n\n          },\n\n          \"name\": {\n\n            \"type\": \"string\",\n\n            \"description\": \"Nazwa treningu, np. 'Barki i Plecy'\"\n\n          },\n\n          \"timeRequired\": {\n\n            \"type\": \"integer\",\n\n            \"description\": \"Czas podany w minutach\"\n\n          },\n\n          \"exercises\": {\n\n            \"type\": \"array\",\n\n            \"items\": {\n\n              \"type\": \"object\",\n\n              \"properties\": {\n\n                \"name\": {\n\n                  \"type\": \"string\",\n\n                  \"description\": \"Nazwa ćwiczenia\"\n\n                },\n\n                \"video\": {\n\n                  \"type\": \"string\",\n\n                  \"format\": \"uri\",\n\n                  \"description\": \"Bezpośredni adres URL do filmu instruktażowego z API\"\n\n                },\n\n                \"repetitions\": {\n\n                  \"type\": \"string\",\n\n                  \"description\": \"Liczba serii i powtórzeń, np. '3 x 15'\"\n                }\n\n              },\n\n              \"required\": [\"name\", \"video\", \"repetitions\"]\n\n            }\n\n          }\n\n        },\n\n        \"required\": [\"day\", \"name\", \"timeRequired\", \"exercises\"]\n\n      }\n\n    }\n\n  },\n\n  \"required\": [\"trainings\"]\n\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        464
+      ],
+      "id": "d35c9e58-a6bf-4958-9c25-1a48fee14761",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "toolDescription": "IMPORTANT: Use this when you want to add exercises, after getting data from \"Get muscles\"\n\nSelect up to 2 exercises before stepping to next tool",
+        "url": "https://musclewiki-api.p.rapidapi.com/exercises",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "=10"
+            },
+            {
+              "name": "offset",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `Random mathematical number between 0 to exercises count of one muscle (availvable in 'count' key in object returned from \"Get muscles\") - 10 (eng. exercise count of one muscle minus 10)`, 'string') }}"
+            },
+            {
+              "name": "gender",
+              "value": "=male"
+            },
+            {
+              "name": "muscles",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters3_Value', `Use name of muscle got from \"Get muscles\"`, 'string') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-host",
+              "value": "musclewiki-api.p.rapidapi.com"
+            },
+            {
+              "name": "x-rapidapi-key",
+              "value": "299922e148msh9a1fbac3c90fe8cp11dcc5jsn34451e952600"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        976,
+        768
+      ],
+      "id": "3de2005f-f8e2-4329-81f3-2509725c7a83",
+      "name": "MuscleWiki – Get Exercises"
+    },
+    {
+      "parameters": {
+        "toolDescription": "USE THIS INITIALLY: Returns all primary muscle groups (e.g., Biceps, Chest, Quadriceps) with exercise counts. AI must use these exact names for any muscle-based filtering in other nodes to ensure accuracy.",
+        "url": "https://musclewiki-api.p.rapidapi.com/muscles",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-host",
+              "value": "musclewiki-api.p.rapidapi.com"
+            },
+            {
+              "name": "x-rapidapi-key",
+              "value": "299922e148msh9a1fbac3c90fe8cp11dcc5jsn34451e952600"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1296,
+        768
+      ],
+      "id": "62677640-81cb-4e3f-b9b8-a596c54a3600",
+      "name": "MuscleWiki – Get Muscles"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        848,
+        464
+      ],
+      "id": "adeb9e7c-dff0-41cf-a029-faec3bf715dd",
+      "name": "LLM",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2FN3RfVLvSOEV5Pe",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# TOOLS\n",
+        "height": 256,
+        "width": 544,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        912,
+        688
+      ],
+      "typeVersion": 1,
+      "id": "98ec41a7-485d-4172-a61e-8442929936ad",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ (Math.random() * 10300643).floor() }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        320
+      ],
+      "id": "9366f501-c5cf-4d99-a9ac-7f307ae250e9",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "description": "INSTRUCTIONS: Use this when you selected up to 2 exercises from \"Get exercises\" tool.\n\nINPUT: String json adjusted to json schema:\n```json\n{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"exercises\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"id\": {\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\"name\", \"id\"]\n      }\n    }\n  },\n  \"required\": [\"exercises\"]\n}\n```\n\nOUTPUT: string containing json that applies json schema:\n```json\n{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"exercises\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"category\": {\n            \"type\": \"string\"\n          },\n          \"steps\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"image\": {\n            \"type\": \"string\",\n            \"format\": \"uri\"\n          },\n          \"videos\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"url\": {\n                  \"type\": \"string\",\n                  \"format\": \"uri\"\n                },\n                \"angle\": {\n                  \"type\": \"string\"\n                },\n                \"gender\": {\n                  \"type\": \"string\"\n                },\n                \"og_image\": {\n                  \"type\": \"string\",\n                  \"format\": \"uri\"\n                }\n              },\n            }\n          }\n        },\n        \"required\": [\"name\", \"category\", \"steps\", \"videos\", \"image\"]\n      }\n    }\n  },\n  \"required\": [\"exercises\"]\n}\n```",
+        "jsCode": "try {\n  const inputData = JSON.parse(query);\n  let dataFetched;\n  const listOfExercises = inputData.exercises.map(async (exercise) => {\n    try {\n      const options = {\n        method: 'GET',\n        url: `https://musclewiki-api.p.rapidapi.com/exercises/${exercise.id}`,\n        params: {\n          details: true,\n          gender: 'male'\n        },\n        headers: {\n          'x-rapidapi-host': 'musclewiki-api.p.rapidapi.com',\n          'x-rapidapi-key': '299922e148msh9a1fbac3c90fe8cp11dcc5jsn34451e952600',\n        },\n      };\n\n      const response = await this.helpers.request(options);\n      const data = response;\n      dataFetched = data\n\n      return {\n        name: data.name,\n        difficulty: data.difficulty,\n        steps: data.steps,\n        videos: data.videos,\n        // image: data.videos[0]?.og_image,\n      };\n    } catch (err) {\n      return {\n        queryData: 'query',\n        message: 'Error while fetching exercise details',\n        error: err.message,\n        data: dataFetched,\n      };\n    }\n  });\n\n  const exercisesDetails = await Promise.all(listOfExercises);\n  return JSON.stringify(exercisesDetails);\n} catch (err) {\n  return JSON.stringify({\n    queryData: query,\n    message: 'Error while parsing input data',\n    error: err.message,\n    data: null,\n  });\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        768
+      ],
+      "id": "7827e37f-b60e-4fd6-93bc-36f1158ebb3a",
+      "name": "extract_details_of_exercises1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Planner agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planner agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planner agent LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Planner agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output schema of tranining planner agent": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Planner agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MuscleWiki – Get Exercises": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MuscleWiki – Get Muscles": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract_details_of_exercises1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "474965b0-9daf-457a-b11d-df026a57f907",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b6069034748375a5d432189b12fc74e4aaad669d8e544f33f3f7848ff89e519d"
+  },
+  "id": "K2REbo883B719wUk",
+  "tags": []
+}

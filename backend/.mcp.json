@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "mongodb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server",
+        "--connectionString",
+        "mongodb://admin:password123@localhost:27017/?authSource=admin"
+      ],
+      "env": {
+        "MDB_MCP_READ_ONLY": "false"
+      }
+    }
+  }
+}

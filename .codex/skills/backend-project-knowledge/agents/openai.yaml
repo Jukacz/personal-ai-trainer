@@ -1,0 +1,3 @@
+interface:
+  display_name: "Backend Project Knowledge"
+  short_description: "FastAPI backend architecture, API patterns, and MongoDB conventions"
